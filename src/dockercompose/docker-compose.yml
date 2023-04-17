@@ -37,3 +37,26 @@ services:
     build:
       context: ../loadgenerator
       dockerfile: dockerfile
+    ports:
+      - "7001:7001"
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: citizendemo-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+  grafana:
+    image: grafana/grafana
+    container_name: citizendemo-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=citizendemo
+      - GF_SECURITY_ADMIN_PASSWORD=citizendemo
+    volumes:
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
