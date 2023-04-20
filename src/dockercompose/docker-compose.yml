@@ -9,7 +9,7 @@ services:
     ports:
       - "27018:27017"
   citizendemo.resourceapi:
-    image: citizendemo-resourceapi:v1
+    image: citizendemo-resourceapi:latest
     container_name: citizendemo-resourceapi
     depends_on:
       - mongodb
@@ -19,7 +19,7 @@ services:
     ports:
       - "6001:6001"
   citizendemo.citizenapi:
-    image: citizendemo-citizenapi:v1
+    image: citizendemo-citizenapi:latest
     container_name: citizendemo-citizenapi
     depends_on:
       - mongodb
@@ -30,7 +30,7 @@ services:
     ports:
       - "5001:5001"
   citizendemo.loadgenerator:
-    image: citizendemo-loadgenerator:v1
+    image: citizendemo-loadgenerator:latest
     container_name: citizendemo-loadgenerator
     depends_on:
       - citizendemo.citizenapi
