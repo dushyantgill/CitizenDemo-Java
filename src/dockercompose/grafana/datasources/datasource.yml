@@ -7,3 +7,15 @@ datasources:
     isDefault: true
     access: proxy
     editable: true
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://host.docker.internal:3100
+    version: 1
+    editable: false
+  - name: Jaeger
+    type: jaeger
+    access: proxy
+    url: http://host.docker.internal:16686/
+    editable: false
+    isDefault: false

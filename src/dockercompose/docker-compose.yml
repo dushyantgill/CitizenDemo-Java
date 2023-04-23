@@ -2,7 +2,7 @@ version: '3.4'
 services:
   mongodb:
     image: mongo
-    container_name: citizendemo-mongodatabase
+    container_name: citizendemo-database-mongo
     environment:
       - MONGO_INITDB_ROOT_USERNAME=citizendemo
       - MONGO_INITDB_ROOT_PASSWORD=citizendemo
@@ -10,7 +10,7 @@ services:
       - "27018:27017"
   citizendemo.resourceapi:
     image: citizendemo-resourceapi:latest
-    container_name: citizendemo-resourceapi
+    container_name: citizendemo-microservice-resourceapi
     depends_on:
       - mongodb
     build:
@@ -18,9 +18,11 @@ services:
       dockerfile: dockerfile
     ports:
       - "6001:6001"
+    labels:
+      logging: "promtail"
   citizendemo.citizenapi:
     image: citizendemo-citizenapi:latest
-    container_name: citizendemo-citizenapi
+    container_name: citizendemo-microservice-citizenapi
     depends_on:
       - mongodb
       - citizendemo.resourceapi
@@ -29,9 +31,11 @@ services:
       dockerfile: dockerfile
     ports:
       - "5001:5001"
+    labels:
+      logging: "promtail"
   citizendemo.loadgenerator:
     image: citizendemo-loadgenerator:latest
-    container_name: citizendemo-loadgenerator
+    container_name: citizendemo-microservice-loadgenerator
     depends_on:
       - citizendemo.citizenapi
     build:
@@ -39,24 +43,60 @@ services:
       dockerfile: dockerfile
     ports:
       - "7001:7001"
+    labels:
+      logging: "promtail"
+  otel-collector:
+    image: otel/opentelemetry-collector
+    container_name: citizendemo-monitoring-otel-collector
+    command: ["--config=/etc/otel-collector.yml"]
+    volumes:
+      - ./otel-collector/otel-collector.yml:/etc/otel-collector.yml
+    ports:
+      - "4317:4317"
+      - "8889:8889"
   prometheus:
     image: prom/prometheus:latest
-    container_name: citizendemo-prometheus
+    container_name: citizendemo-monitoring-prometheus
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--config.file=/etc/prometheus.yml'
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus:/etc/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus.yml
   grafana:
     image: grafana/grafana
-    container_name: citizendemo-grafana
+    container_name: citizendemo-monitoring-grafana
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=citizendemo
-      - GF_SECURITY_ADMIN_PASSWORD=citizendemo
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
     volumes:
       - ./grafana/datasources:/etc/grafana/provisioning/datasources
       - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
       - ./grafana/dashboards:/var/lib/grafana/dashboards
+  loki:
+    image: grafana/loki:latest
+    container_name: citizendemo-monitoring-loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+  promtail:
+    image:  grafana/promtail:latest
+    container_name: citizendemo-monitoring-promtail
+    volumes:
+      - ./promtail/promtail.yaml:/etc/promtail/docker-config.yaml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/docker-config.yaml
+    depends_on:
+      - loki
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: citizendemo-monitoring-jaeger
+    ports:
+      - "16686:16686"
+      - "4318:4317"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true

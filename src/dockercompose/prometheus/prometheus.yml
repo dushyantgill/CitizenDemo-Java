@@ -24,3 +24,10 @@ scrape_configs:
     honor_labels: true
     static_configs:
       - targets: ['host.docker.internal:7001']
+  - job_name: "citizendemo.otelmetrics"
+    metrics_path: /metrics
+    scheme: http
+    honor_timestamps: true
+    honor_labels: true
+    static_configs:
+      - targets: ['host.docker.internal:8889']

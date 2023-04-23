@@ -1,5 +1,6 @@
 FROM maven
 COPY ./ ./
 RUN mvn clean package
+ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar .
 EXPOSE 5001
-CMD ["java", "-jar", "target/citizenapi-0.0.1-SNAPSHOT.jar"]
+CMD ["java", "-javaagent:/opentelemetry-javaagent.jar", "-Dotel.resource.attributes=service.name=citizendemo.citizenapi", "-Dotel.exporter.otlp.endpoint=http://host.docker.internal:4317", "-jar", "target/citizenapi-0.0.1-SNAPSHOT.jar"]
